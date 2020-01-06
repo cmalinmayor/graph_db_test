@@ -1,5 +1,10 @@
 import unittest
+
+import psycopg2
+from psycopg2 import sql
+
 from ..graph_api import NodeList, EdgeList
+from ..postgre.postgre_graph import PostgreGraph
 
 position_attrs = ['z', 'y', 'x']
 
@@ -7,7 +12,7 @@ position_attrs = ['z', 'y', 'x']
 class TestGraph(unittest.TestCase):
 
     def graph_io(self, graph):
-        nodes = NodeList(attrs=['z', 'y', 'x', 'fish'])
+        nodes = NodeList(attr_names=['z', 'y', 'x', 'fish'])
         nodes.add_nodes(
             [
                 [0, 0, 0, 0, "tuna"],
@@ -16,7 +21,7 @@ class TestGraph(unittest.TestCase):
                 [2, 10, 10, 10, "tuna"]
             ])
 
-        edges = EdgeList(attrs=['category'])
+        edges = EdgeList(attr_names=['category'])
         edges.add_edges(
             [
                 [1, 0, 'a'],
@@ -41,5 +46,24 @@ class TestGraph(unittest.TestCase):
         pass
 
     def test_graph_io_postgre(self):
-        # TODO: create postgre graph and call graph_io on it
-        pass
+        graph = PostgreGraph(conn,
+                             node_attr_names=['z', 'y', 'x', 'fish'],
+                             node_attr_types=['INTEGER', 'INTEGER', 'INTEGER', 'VARCHAR'],
+                             edge_attr_names=['category'],
+                             edge_attr_types=['VARCHAR'])
+        self.graph_io(graph)
+
+# Connection hard-coded for now...
+conn = psycopg2.connect(dbname="vaxenburgr",
+                        user="vaxenburgr",
+                        password="password",
+                        host="10.150.100.18",
+                        port="5432")
+
+conn.cursor().execute('DROP TABLE IF EXISTS edges')
+conn.cursor().execute('DROP TABLE IF EXISTS nodes')
+
+unittest.main()
+# conn.close()
+# if __name__ == '__main__':
+#     unittest.main()
