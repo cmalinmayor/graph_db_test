@@ -65,24 +65,21 @@ class Graph():
 
 class NodeList():
     ''' A list of nodes for a graph
-
     Args:
         attrs (list of strings):
             list of string attribute names that all nodes will have
     '''
-    def __init__(self, attrs):
+    def __init__(self, attr_names):
         self.ids = []
-        self.attr_names = attrs
+        self.attr_names = attr_names
         self.attrs = {}
         for attr in self.attr_names:
             self.attrs[attr] = []
 
     def add_node(self, _id, attrs):
         ''' Add node to node list
-
         Args:
             _id (int): an integer id for the node
-
             attrs (dictionary with string keys): the attributes of this node.
                 The attributes must match exactly those in the constructor,
                 or else an error will be thrown.
@@ -96,13 +93,11 @@ class NodeList():
 
     def add_nodes(self, nodes):
         ''' Add nodes to node list
-
         Args:
             nodes (list of lists): a list of nodes,
                 where each node is represented by a list
                 where the first element is the id, and the rest are
                 the attribute values in order of attr_names
-
         '''
         for node in nodes:
             assert len(node) == 1 + len(self.attr_names)
@@ -120,22 +115,19 @@ class NodeList():
 
 class EdgeList():
 
-    def __init__(self, attrs):
+    def __init__(self, attr_names):
         self.us = []
         self.vs = []
-        self.attr_names = attrs
+        self.attr_names = attr_names
         self.attrs = {}
         for attr in self.attr_names:
             self.attrs[attr] = []
 
     def add_edge(self, u, v, attrs):
         ''' Add edge to edge list
-
         Args:
             u (int): id for the source node for the edge
-
             v (int): id for the target node for the edge
-
             attrs (dictionary with string keys): the attribtues of this edge.
                 The attributes must match exactly those in the constructor,
                 or an error will be thrown.
@@ -150,13 +142,11 @@ class EdgeList():
 
     def add_edges(self, edges):
         ''' Add edges to edge list
-
         Args:
             edges (list of lists): a list of edges,
                 where each edge is represented by a list
-                where the first two elements are the source and target ids,
+                where the first two elements are the source and target ids (us and vs),
                 and the rest are the attribute values in order of attr_names
-
         '''
         for edge in edges:
             assert len(edge) == 2 + len(self.attr_names)
