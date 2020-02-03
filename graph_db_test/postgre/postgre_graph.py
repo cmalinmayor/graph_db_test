@@ -5,20 +5,29 @@ from ..graph_api import Graph
 from ..graph_api import NodeList, EdgeList
 
 class PostgreGraph(Graph):
+    """...
+
+    Public methods:
+        add_node_attrs: Adds new attributes (columns) to 'nodes' table.
+        update_nodes: Updates attributes (columns) for given nodes (rows).
+        write_nodes: Writes new nodes to database.
+        write_edges: Writes new edges to database.
+        read_nodes: Reads and returns nodes in specified region from database.
+        read_edges: Reads and returns edges in specified region from database.
+        read_graph: Wrapper for simultaneous read_nodes and read_edges.
+    """
 
     def __init__(self, conn, node_attr_names, node_attr_types, edge_attr_names, edge_attr_types):
-        '''
+        '''Initializes PostgreGraph object. Creates two tables: 'nodes', 'edges'.
+
         Args:
-            conn (psycopg2.connect object):
-                database session
-            node_attr_names (list of strings):
-                node attribute names that all nodes will have
-            node_attr_types (list of strings):
-                Postgres types of node attributes ('INTEGER', 'REAL', 'VARCHAR', 'BOOL', etc.)
-            edge_attr_names (list of string):
-                edge attribute names (in addition to u, v)
-            edge_attr_types (list of strings):
-                Postgres types of edge attributes ('INTEGER', 'REAL', 'VARCHAR', 'BOOL', etc.)
+            conn (psycopg2.connect object): Database session.
+            node_attr_names (list of strings): Node attribute names that all nodes will have.
+            node_attr_types (list of strings): Postgres types of node attributes
+                ('INTEGER', 'REAL', 'VARCHAR', 'BOOL', etc.).
+            edge_attr_names (list of string): Edge attribute names (in addition to u, v).
+            edge_attr_types (list of strings): Postgres types of edge attributes
+                ('INTEGER', 'REAL', 'VARCHAR', 'BOOL', etc.).
         '''
         super().__init__(node_attr_names) # DO WE NEED THIS???
         self.conn = conn
@@ -32,12 +41,55 @@ class PostgreGraph(Graph):
         create_query = self.get_create_query('edges', self.edge_attr_names, self.edge_attr_types)
         self.cur.execute(create_query) # Create table 'edges'
 
+    def add_node_attrs(self, node_attr_names, node_attr_types):
+        """Adds new node attributes (columns) to the 'nodes' table.
+
+        Args:
+            node_attr_names (list of strings): New node attribute names that
+                all nodes will have.
+            node_attr_types (list of strings): Postgres types of new node
+                attributes ('INTEGER', 'REAL', 'VARCHAR', 'BOOL', etc.).
+        """
+        self.node_attr_names += node_attr_names # update list of attributes
+        self.node_attr_types += node_attr_types
+        query = "ALTER TABLE nodes"
+        for attr_, type_ in zip(node_attr_names, node_attr_types):
+            query += " ADD COLUMN " + attr_ + " " + type_ + ","
+        query = query[:-1] # remove comma
+        self.cur.execute(query)
+
+    def update_nodes(self, ids, attrs, values):
+        """Updates attributes (columns) for given nodes (rows).
+
+        Args:
+            ids (list): List of node ids to update.
+            attrs (list): List of attributes to update for each id.
+            values (list of lists): New values to insert, where:
+                len(values) = len(ids), len(values[0]) = len(attrs).
+        Raises:
+            TODO: Check that all 3 input lists are of the same length.
+            TODO: Check that all ids exit in table
+            TODO: Check that all attrs exist in table.
+        """
+        for id, values_ in zip(ids, values):
+            query = "UPDATE nodes SET"
+            for attr in attrs:
+                query += f" {attr} = (%s),"
+            query = query[:-1] # remove comma
+            query += " WHERE id = (%s)"
+            # print("UPDATE QUERY:", query)
+            # print("VALUES:", values_ + [id])
+            self.cur.execute(query, values_ + [id])
+
     def write_nodes(self, nodes):
-        '''Write nodes to database.
+        '''Writes new nodes to database.
+
         Args:
             nodes (`NodeList`): a list of nodes to write to database
-            Throw an error if position_attrs not in NodeList attrs,
-            or if node ids are duplicated [NOT IMPLEMENTED YET]
+
+        Raises:
+            TODO: Throw an error if position_attrs not in NodeList attrs.
+            TODO: Throw an error if node ids are duplicated.
         '''
         insert_query = self.get_insert_query('nodes', self.node_attr_names)
         for i in range(len(nodes.ids)):
@@ -139,3 +191,9 @@ class PostgreGraph(Graph):
             sql.SQL(', ').join([sql.Placeholder()] * len(column_names))
         )
         return insert_query
+
+    def print_nodes(self):
+        """Prints the 'nodes' table."""
+        self.cur.execute("SELECT * FROM nodes")
+        print('Table columns:', [d[0] for d in self.cur.description])
+        print('Table rows:', self.cur.fetchall())
